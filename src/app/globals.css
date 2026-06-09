@@ -4,15 +4,15 @@
    Pure-black monochrome site (andagain.uk feel). The only color
    exception is the iMessage blue, used solely inside the chat. */
 @theme inline {
-  --color-bg: #000000;
-  --color-fg: #ffffff;
-  --color-rule: rgba(255, 255, 255, 0.18);
+  --color-bg: #ecfd18;
+  --color-fg: #000000;
+  --color-rule: rgba(0, 0, 0, 0.18);
 
   /* iMessage (dark mode) */
   --color-imessage-blue: #0b93f6;
   --color-imessage-gray: #26252c;
 
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-display);
 }
 
 :root {
@@ -20,7 +20,7 @@
 }
 
 html {
-  background: #000000;
+  background: #ecfd18;
   /* Lenis drives scrolling; keep the native bar out of the way. */
   scrollbar-width: none;
 }
@@ -34,6 +34,9 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* The hero zoom scales the wordmark past the viewport; the hero section
+     clips it, but guard against any stray horizontal scrollbar on mobile. */
+  overflow-x: hidden;
 }
 
 /* Lenis: disable smooth handling when the lib is not active so native

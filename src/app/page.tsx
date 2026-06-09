@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import TopNav from "@/components/TopNav";
 import Hero from "@/components/Hero";
 import VideoReveal from "@/components/VideoReveal";
 import ChatCV from "@/components/ChatCV";
@@ -14,10 +13,9 @@ export default function Home() {
 
   return (
     <>
-      <TopNav onContact={openContact} />
       <main>
-        <Hero onContact={openContact} />
-        <VideoReveal />
+        <Hero />
+        <VideoReveal onContact={openContact} />
         <ChatCV />
       </main>
       <ContactModal open={contactOpen} onClose={closeContact} />

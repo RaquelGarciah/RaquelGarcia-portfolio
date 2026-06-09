@@ -1,13 +1,18 @@
 "use client";
 
 import { useRef } from "react";
-import { gsap } from "@/lib/gsap";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useIsomorphicLayoutEffect } from "@/lib/useIsomorphicLayoutEffect";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { profile } from "@/data/profile";
-import KineticName from "./KineticName";
+import KineticName, { NAME_BAND, ROLL_REST_YPERCENT } from "./KineticName";
 
-export default function Hero({ onContact }: { onContact: () => void }) {
+// Tunables for the scroll zoom.
+const PIN_DISTANCE = 1.1; // pin length in viewport heights (~110vh of scroll)
+const ZOOM_SCALE = 5; // final scale of the wordmark
+const ZOOM_ORIGIN = "50% 50%"; // grow from the name's center → overflows all edges
+
+export default function Hero() {
   const rootRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
 
@@ -16,48 +21,86 @@ export default function Hero({ onContact }: { onContact: () => void }) {
     if (!root) return;
 
     const ctx = gsap.context(() => {
-      if (reduced) return; // render final state, no motion
+      if (reduced) return; // reduced motion → final states, no roll, no zoom
 
-      // 1. Name mask reveal — single translateY(100%→0) wipe behind the clip.
-      const tl = gsap.timeline({ delay: 0.1 });
-      tl.from(".kinetic-name-svg", {
-        yPercent: 100,
-        duration: 1.0,
-        ease: "expo.out",
+      // ── 1. Load reveal (once, time-based, independent of scroll) ──
+      // Each half is a vertical ROLL — a column of copies that spins up through
+      // the clip and decelerates onto the final one (slot-machine), staggered
+      // between the two halves. Meanwhile the assembled word eases down from
+      // oversized to final size. Labels + tagline appear AFTER the name lands.
+      // Hidden start states set synchronously (before first paint) so the
+      // reveal can never be skipped or flash the wrong frame.
+      gsap.set(".kn-roll", { yPercent: 0 });
+      gsap.set(".kinetic-name-inner", {
+        scale: 1.22,
+        transformOrigin: "50% 50%",
       });
 
-      // 2. Labels + tagline rise and fade in, just after the name.
-      tl.from(
-        ".hero-rise",
-        {
-          y: 24,
-          opacity: 0,
-          duration: 0.8,
-          ease: "power3.out",
-          stagger: 0.12,
-        },
-        "-=0.7",
-      );
+      const load = gsap.timeline({ delay: 0.15 });
+      load
+        .to(
+          ".kn-roll",
+          {
+            yPercent: ROLL_REST_YPERCENT,
+            duration: 1.15,
+            ease: "power4.out",
+            stagger: 0.13,
+          },
+          0,
+        )
+        .to(
+          ".kinetic-name-inner",
+          { scale: 1, duration: 1.25, ease: "expo.out" },
+          0,
+        )
+        .from(
+          ".hero-rule",
+          {
+            scaleX: 0,
+            transformOrigin: "left center",
+            duration: 0.8,
+            ease: "power4.out",
+          },
+          1.05,
+        )
+        .from(
+          ".hero-rise",
+          {
+            y: 24,
+            opacity: 0,
+            duration: 0.7,
+            ease: "power3.out",
+            stagger: 0.1,
+          },
+          1.15,
+        );
 
-      // 3. Thin divider rule draws in.
-      tl.from(
-        ".hero-rule",
-        { scaleX: 0, transformOrigin: "left center", duration: 0.9, ease: "power4.out" },
-        "-=0.8",
-      );
+      // ── 2. Scroll zoom (the star effect, scrubbed to scroll) ──
+      gsap.set(".hero-name-zoom", { transformOrigin: ZOOM_ORIGIN });
 
-      // 4. Parallax — the giant name drifts up slightly slower than scroll.
-      gsap.to(".kinetic-name-clip", {
-        yPercent: -15,
-        ease: "none",
+      const zoom = gsap.timeline({
         scrollTrigger: {
           trigger: root,
           start: "top top",
-          end: "bottom top",
-          scrub: true,
+          end: () => "+=" + window.innerHeight * PIN_DISTANCE,
+          pin: true,
+          scrub: 0.5,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
         },
       });
+      zoom
+        .to(".hero-fade", { opacity: 0, ease: "none", duration: 0.3 }, 0)
+        .to(
+          ".hero-name-zoom",
+          { scale: ZOOM_SCALE, ease: "power2.out", duration: 1 },
+          0,
+        );
     }, root);
+
+    if (typeof document !== "undefined" && "fonts" in document) {
+      document.fonts.ready.then(() => ScrollTrigger.refresh());
+    }
 
     return () => ctx.revert();
   }, [reduced]);
@@ -66,44 +109,55 @@ export default function Hero({ onContact }: { onContact: () => void }) {
     <section
       ref={rootRef}
       id="hero"
-      className="relative flex min-h-svh flex-col px-4 pt-3 sm:px-6"
+      className="relative h-svh min-h-[640px] w-full overflow-hidden bg-[var(--color-bg)]"
+      style={
+        {
+          "--name-h": NAME_BAND,
+          // rule sits just below the name band (8px top inset + band + small gap)
+          "--rule-top": "calc(8px + var(--name-h) + 6px)",
+          "--side": "24px",
+        } as React.CSSProperties
+      }
     >
-      {/* The wordmark, flush to the top edge. */}
-      <KineticName />
+      {/* The wordmark — full bleed within the side margins, flush to the top. */}
+      <div className="hero-name-zoom absolute left-[var(--side)] right-[var(--side)] top-2 will-change-transform">
+        <KineticName />
+      </div>
 
-      {/* Thin divider rule directly under the name. */}
-      <div className="hero-rule mt-2 h-px w-full bg-[var(--color-rule)]" />
+      {/* Everything below fades out as the scroll zoom takes over. */}
+      <div className="hero-fade absolute inset-0">
+        {/* Horizontal divider rule, full width, just under the name. */}
+        <div
+          className="hero-rule absolute left-[var(--side)] right-[var(--side)] h-px bg-[var(--color-rule)]"
+          style={{ top: "var(--rule-top)" }}
+        />
 
-      {/* Label row: two columns split by a thin vertical rule. */}
-      <div className="grid grid-cols-1 gap-y-6 pt-5 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] sm:gap-x-8">
-        {/* Left column — role label + contact cue. */}
-        <div className="hero-rise flex flex-col gap-3 sm:border-r sm:border-[var(--color-rule)] sm:pr-8">
-          <span className="text-[clamp(0.95rem,1.4vw,1.25rem)] tracking-tight text-white/70">
-            {profile.role}
+        {/* Vertical divider at ~40%, from the rule downward. */}
+        <div
+          className="hero-rise absolute bottom-0 w-px bg-[var(--color-rule)]"
+          style={{ left: "40%", top: "var(--rule-top)" }}
+        />
+
+        {/* Left column — tease line + contact CTA, aligned to the name's left
+            edge (left of the vertical divider). */}
+        <div
+          className="hero-rise absolute left-[var(--side)]"
+          style={{ top: "calc(var(--rule-top) + 18px)" }}
+        >
+          <span className="text-[clamp(1.05rem,1.8vw,1.5rem)] font-normal text-black/75">
+            Easy problems bore me.
           </span>
-          <button
-            type="button"
-            onClick={onContact}
-            className="group inline-flex w-fit items-center gap-1 text-[clamp(0.95rem,1.4vw,1.25rem)] tracking-tight text-white underline-offset-4 transition-opacity hover:opacity-60 focus-visible:underline focus-visible:outline-none"
-          >
-            Nice to meet you
-            <span className="transition-transform group-hover:translate-y-0.5" aria-hidden="true">
-              ↓
-            </span>
-          </button>
         </div>
 
-        {/* Right column — the tagline. Short form on small screens. */}
-        <p className="hero-rise max-w-[24ch] text-[clamp(1.6rem,3vw,2.6rem)] font-medium leading-[1.08] tracking-tight sm:max-w-none">
+        {/* Tagline — right zone, aligned to the divider, placed low with a big
+            black gap above it and some breathing room below. */}
+        <p
+          className="hero-rise absolute right-[var(--side)] left-[40%] max-w-[28ch] pl-4 text-[clamp(1.6rem,3.3vw,2.6rem)] font-normal leading-[1.12] tracking-tight sm:max-w-[32ch]"
+          style={{ top: "66vh" }}
+        >
           <span className="hidden sm:inline">{profile.tagline}</span>
           <span className="sm:hidden">{profile.taglineShort}</span>
         </p>
-      </div>
-
-      {/* Scroll cue pinned near the bottom of the generous negative space. */}
-      <div className="hero-rise mt-auto hidden items-center gap-2 pb-8 text-xs uppercase tracking-[0.25em] text-white/40 sm:flex">
-        <span>Scroll</span>
-        <span aria-hidden="true">↓</span>
       </div>
     </section>
   );

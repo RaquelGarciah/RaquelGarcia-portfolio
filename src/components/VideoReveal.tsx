@@ -9,7 +9,11 @@ import { useReducedMotion } from "@/lib/useReducedMotion";
 // Expected: public/media/raquel-wave.mp4 — mp4 / H.264, ~1080p, <10s, <8MB.
 const VIDEO_SRC = "/media/raquel-wave.mp4";
 
-export default function VideoReveal() {
+export default function VideoReveal({
+  onContact,
+}: {
+  onContact: () => void;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -68,7 +72,7 @@ export default function VideoReveal() {
       id="video"
       className="flex min-h-svh items-center justify-center px-4 py-24 sm:px-6"
     >
-      <div ref={frameRef} className="relative w-full max-w-4xl">
+      <div ref={frameRef} className="flex w-full max-w-4xl flex-col items-center">
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/15 bg-[#111]">
           {missing ? (
             <div className="flex h-full w-full items-center justify-center">
@@ -102,6 +106,16 @@ export default function VideoReveal() {
             </button>
           )}
         </div>
+
+        {/* Contact CTA, centered just below the video frame. Opens the
+            ContactCard (phone, email, GitHub). */}
+        <button
+          type="button"
+          onClick={onContact}
+          className="mt-8 inline-flex items-center text-[clamp(1.6rem,3.3vw,2.6rem)] font-normal leading-[1.12] tracking-tight text-black transition-opacity hover:opacity-60 focus-visible:outline-none"
+        >
+          Tell me more!!! 😊
+        </button>
       </div>
     </section>
   );

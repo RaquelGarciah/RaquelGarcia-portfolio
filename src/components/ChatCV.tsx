@@ -8,14 +8,17 @@ import ChatBubble, { type Sender } from "./ChatBubble";
 import TypingIndicator from "./TypingIndicator";
 import OptionChips from "./OptionChips";
 import { ContactCard } from "./ContactCard";
+import ProjectShowcase from "./ProjectShowcase";
 
 type ChatItem =
   | { kind: "msg"; id: number; from: Sender; text: string }
-  | { kind: "contact"; id: number };
+  | { kind: "contact"; id: number }
+  | { kind: "projects"; id: number }
+  | { kind: "cta"; id: number; label: string; url: string };
 
-type Mode = "idle" | "name" | "options";
+type Mode = "idle" | "name" | "options" | "ended";
 
-const CONTENT_OPTIONS: OptionId[] = ["PROJECTS", "EXPERIENCE"];
+const CONTENT_OPTIONS: OptionId[] = ["ABOUT", "PROJECTS", "EXPERIENCE"];
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -89,6 +92,15 @@ export default function ChatCV() {
       await botSay(opt.reply);
       if (cancelledRef.current) return;
 
+      if (opt.projects) {
+        setItems((prev) => [...prev, { kind: "projects", id: nextId() }]);
+        await delay(reducedRef.current ? 60 : 300);
+      }
+      if (opt.cta) {
+        const { label, url } = opt.cta;
+        setItems((prev) => [...prev, { kind: "cta", id: nextId(), label, url }]);
+        await delay(reducedRef.current ? 60 : 300);
+      }
       if (opt.revealsContact) {
         setItems((prev) => [...prev, { kind: "contact", id: nextId() }]);
         await delay(reducedRef.current ? 60 : 300);
@@ -98,14 +110,24 @@ export default function ChatCV() {
       const contentLeft = CONTENT_OPTIONS.filter(
         (o) => !visitedRef.current.has(o),
       );
-      if (contentLeft.length === 0 && !closingSaidRef.current) {
-        closingSaidRef.current = true;
-        await botSay([
-          conversation.closing.replace("{name}", nameRef.current),
-        ]);
-      } else {
-        await botSay([conversation.reprompt]);
+
+      // End only once every content branch is explored AND the visitor has
+      // actually tapped "HOW DO I REACH YOU?" — that chip stays reachable to
+      // the very end, so the contact details are never skipped.
+      if (contentLeft.length === 0 && id === "CONTACT") {
+        if (!closingSaidRef.current) {
+          closingSaidRef.current = true;
+          await botSay([
+            conversation.closing.replace("{name}", nameRef.current),
+          ]);
+        }
+        if (cancelledRef.current) return;
+        setChips([]);
+        setMode("ended");
+        return;
       }
+
+      await botSay([conversation.reprompt]);
       if (cancelledRef.current) return;
       offerOptions();
     },
@@ -194,8 +216,7 @@ export default function ChatCV() {
             R
           </div>
           <div className="leading-tight">
-            <p className="text-sm font-semibold">Raquel García</p>
-            <p className="text-xs text-white/45">iMessage</p>
+            <p className="text-sm font-semibold text-white">Raquel García</p>
           </div>
         </div>
 
@@ -213,6 +234,23 @@ export default function ChatCV() {
               return (
                 <div key={item.id} className="my-2">
                   <ContactCard />
+                </div>
+              );
+            }
+            if (item.kind === "projects") {
+              return <ProjectShowcase key={item.id} />;
+            }
+            if (item.kind === "cta") {
+              return (
+                <div key={item.id} className="flex justify-start">
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-3xl rounded-bl-md bg-[var(--color-imessage-gray)] px-4 py-2.5 text-[15px] font-semibold text-white underline decoration-white/50 underline-offset-2 transition-opacity hover:opacity-80 focus-visible:opacity-80 focus-visible:outline-none"
+                  >
+                    {item.label} →
+                  </a>
                 </div>
               );
             }
@@ -271,6 +309,12 @@ export default function ChatCV() {
           {mode === "idle" && (
             <p className="py-2 text-center text-xs text-white/30">
               {items.length === 0 ? "Scroll into the chat to say hi" : "…"}
+            </p>
+          )}
+
+          {mode === "ended" && (
+            <p className="py-2 text-center text-xs text-white/30">
+              SEE YOU!!!!!!
             </p>
           )}
         </div>

@@ -1,13 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 
-// One typeface for everything (Inter, the free grotesque standing in for
-// Spezia). Variable font → all weights incl. 900 for the giant wordmark.
-const inter = Inter({
+// One typeface for everything. The reference uses Spezia (Zetafonts) — a
+// heavier, wider, rounder grotesque. Spezia is COMMERCIAL, so until it's
+// licensed we use Hanken Grotesk (variable, up to weight 900) as the closest
+// free stand-in: name in Black (900), labels/tagline in Regular (400).
+//
+// TODO — swap to self-hosted Spezia once licensed:
+//   import localFont from "next/font/local";
+//   const display = localFont({
+//     variable: "--font-display",
+//     display: "swap",
+//     src: [
+//       { path: "./fonts/Spezia-Regular.woff2", weight: "400", style: "normal" },
+//       { path: "./fonts/Spezia-Bold.woff2",    weight: "700", style: "normal" },
+//     ],
+//   });
+// Drop the .woff2 files in src/app/fonts/, then use `display.variable` below.
+const display = Hanken_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -44,7 +58,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={display.variable}>
       <body>
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>

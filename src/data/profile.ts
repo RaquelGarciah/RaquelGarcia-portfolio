@@ -19,7 +19,7 @@ export const profile = {
     emailHref: "mailto:raquelgarciahernandez04@gmail.com",
     github: "https://github.com/RaquelGarciah",
     githubLabel: "github.com/RaquelGarciah",
-    // TODO: optional LinkedIn URL.
-    linkedin: null as string | null,
+    linkedin: "https://www.linkedin.com/in/raquel-garcia-hernandez-a08267337/",
+    linkedinLabel: "in/raquel-garcia-hernandez",
   },
 } as const;

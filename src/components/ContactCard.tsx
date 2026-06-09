@@ -33,7 +33,7 @@ export function ContactCard({ className = "" }: { className?: string }) {
   return (
     <ul className={`flex flex-col ${className}`}>
       {ROWS.map((row) => (
-        <li key={row.label} className="border-t border-[var(--color-rule)] last:border-b">
+        <li key={row.label} className="border-t border-white/15 last:border-b">
           <a
             href={row.href}
             {...(row.external
@@ -44,7 +44,7 @@ export function ContactCard({ className = "" }: { className?: string }) {
             <span className="text-xs uppercase tracking-[0.2em] text-white/50">
               {row.label}
             </span>
-            <span className="text-right text-base sm:text-lg">{row.value}</span>
+            <span className="text-right text-base text-white sm:text-lg">{row.value}</span>
           </a>
         </li>
       ))}
@@ -138,7 +138,7 @@ export function ContactModal({
             <div className="mb-6 flex items-start justify-between">
               <h2
                 id="contact-modal-title"
-                className="text-2xl font-bold tracking-tight"
+                className="text-2xl font-bold tracking-tight text-white"
               >
                 Nice to meet you.
               </h2>
