@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Raquel García — Interactive Portfolio
 
-## Getting Started
+A personal portfolio that doubles as an **interactive, conversational CV**. A
+minimalist black hero (in the spirit of [andagain.uk](https://andagain.uk))
+reveals a kinetic wordmark, scrolls into a waving video, and then into an
+**Apple-iMessage-style chat** where visitors "talk" to me and explore my work by
+tapping options.
 
-First, run the development server:
+Single page, scroll-driven, fully static — no backend.
+
+## Tech stack
+
+- **Next.js 16** (App Router) + **TypeScript** (strict)
+- **Tailwind CSS v4**
+- **GSAP + ScrollTrigger** — kinetic name reveal, parallax, section reveals
+- **Lenis** — smooth/virtual scrolling, synced to ScrollTrigger
+- **Framer Motion** — chat bubble + modal micro-transitions
+- Typeface: **Inter** (variable, via `next/font/google`) — free stand-in for
+  Spezia, weight 900 for the giant wordmark
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # if the npm cache complains about root-owned files, see Troubleshooting
+npm run dev          # http://localhost:3000
+npm run build        # production build
+npm run start        # serve the production build
+npm run lint         # eslint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Requires Node 18.18+ (developed on Node 26).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/
+    layout.tsx          # Inter font, SEO metadata, SmoothScrollProvider
+    page.tsx            # composes Hero + VideoReveal + ChatCV + ContactModal
+    globals.css         # tokens (black/white + iMessage colors), reduced-motion
+  components/
+    TopNav.tsx          # fixed minimal nav
+    Hero.tsx            # GSAP load reveal + scroll parallax
+    KineticName.tsx     # full-width SVG wordmark (sized by viewBox)
+    VideoReveal.tsx     # scroll-in autoplay video + placeholder fallback
+    ChatCV.tsx          # iMessage state machine + rendering
+    ChatBubble.tsx      # one bubble (blue = me, gray = you)
+    TypingIndicator.tsx # animated dots
+    OptionChips.tsx     # tappable reply pills
+    ContactCard.tsx     # shared contact rows + modal overlay
+    SmoothScrollProvider.tsx
+  data/
+    profile.ts          # name, tagline, contact info
+    conversation.ts     # all chat copy + branch content (edit copy here)
+  lib/
+    gsap.ts             # registers ScrollTrigger once
+    useReducedMotion.ts
+    useIsomorphicLayoutEffect.ts
+public/
+  media/raquel-wave.mp4 # PLACEHOLDER — see TODOs
+```
 
-## Learn More
+**Edit chat copy** in `src/data/conversation.ts` and identity/contact details in
+`src/data/profile.ts` — no need to touch components.
 
-To learn more about Next.js, take a look at the following resources:
+## Accessibility & motion
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Honors `prefers-reduced-motion`: GSAP timelines and Lenis are skipped, final
+  states render, native scrolling is used.
+- Keyboard-navigable chips, focus-trapped contact modal (ESC + backdrop close),
+  `aria-live` chat region, labels throughout.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Open TODOs (placeholders left in code)
 
-## Deploy on Vercel
+- **`public/media/raquel-wave.mp4`** — the real waving video.
+  Expected format: **mp4 / H.264, ~1080p, <10s, <8MB**. Until it exists, the
+  video section shows a tidy `[ video coming soon ]` placeholder automatically.
+  Referenced via `VIDEO_SRC` in `src/components/VideoReveal.tsx`.
+- **Repo links** for the personal builds — `// TODO` in
+  `src/data/conversation.ts` (PROJECTS branch). GitHub handle is set to
+  `RaquelGarciah`.
+- **`public/og.png`** — social share image (1200×630). Referenced in
+  `src/app/layout.tsx`.
+- **LinkedIn URL** (optional) — `profile.contact.linkedin` in
+  `src/data/profile.ts`; add a row in `ContactCard.tsx` once set.
+- **Production domain** — `SITE_URL` in `src/app/layout.tsx` (used for OG
+  `metadataBase`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment (Vercel + GitHub)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Create a public GitHub repo (e.g. `raquel-portfolio`) and push:
+   ```bash
+   git add -A && git commit -m "Initial portfolio"
+   git branch -M main
+   git remote add origin https://github.com/RaquelGarciah/raquel-portfolio.git
+   git push -u origin main
+   ```
+2. On [vercel.com](https://vercel.com): **Add New → Project**, import the repo.
+   Framework preset **Next.js** is detected automatically — no env vars needed.
+3. Deploy. Every push to `main` redeploys.
+
+## Troubleshooting
+
+- **`npm install` fails with `EACCES` / "root-owned files" in `~/.npm`:** an old
+  npm bug left root-owned cache files. Either run
+  `sudo chown -R $(id -u):$(id -g) ~/.npm`, or install against a fresh cache:
+  `npm install --cache /tmp/npm-cache --legacy-peer-deps`.
