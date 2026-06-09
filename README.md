@@ -1,8 +1,7 @@
 # Raquel García — Interactive Portfolio
 
 A personal portfolio that doubles as an **interactive, conversational CV**. A
-minimalist black hero (in the spirit of [andagain.uk](https://andagain.uk))
-reveals a kinetic wordmark, scrolls into a waving video, and then into an
+minimalist black hero reveals a kinetic wordmark, scrolls into a waving video, and then into an
 **Apple-iMessage-style chat** where visitors "talk" to me and explore my work by
 tapping options.
 
