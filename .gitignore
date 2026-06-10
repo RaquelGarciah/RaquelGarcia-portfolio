@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local reference assets (not part of the site)
 *.mov
+
+# local source video for the demo GIF (the GIF lives in docs/)
+/demo.mp4

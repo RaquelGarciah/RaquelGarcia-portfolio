@@ -7,6 +7,10 @@ tapping options.
 
 Single page, scroll-driven, fully static — no backend.
 
+## Demo
+
+![Demo of the interactive portfolio: kinetic hero, video reveal, and iMessage-style chat CV](docs/demo.gif)
+
 ## Tech stack
 
 - **Next.js 16** (App Router) + **TypeScript** (strict)
